@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dimsum Catcher</title>
+    <style>
+        body { 
+            margin: 0; 
+            background: #1e1e1e; 
+            color: #fff; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        canvas { 
+            background: #2d2d2d; 
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5); 
+            border-radius: 12px; 
+            border: 2px solid #ff9800;
+        }
+        #scoreBoard { 
+            margin-bottom: 15px; 
+            font-size: 24px; 
+            font-weight: bold;
+            color: #ffb74d;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="scoreBoard">Skor: <span id="score">0</span></div>
+    <canvas id="gameCanvas" width="400" height="500"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreElement = document.getElementById("score");
+        
+        let score = 0;
+        let gameOver = false;
+        let animationId;
+
+        // Keranjang (Pemain)
+        const player = { x: 160, y: 450, width: 80, height: 20, speed: 7, dx: 0 };
+        
+        // Item yang jatuh (Dimsum)
+        let item = { x: Math.random() * 380, y: -20, radius: 12, speed: 3 };
+
+        function drawPlayer() {
+            ctx.fillStyle = "#ff9800"; 
+            ctx.beginPath();
+            ctx.roundRect(player.x, player.y, player.width, player.height, 5);
+            ctx.fill();
+        }
+
+        function drawItem() {
+            ctx.beginPath();
+            ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
+            ctx.fillStyle = "#ffdd57"; // Warna kuning dimsum
+            ctx.fill();
+            ctx.strokeStyle = "#d4af37";
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        function update() {
+            if (gameOver) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPlayer();
+            drawItem();
+
+            // Pergerakan pemain
+            player.x += player.dx;
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+
+            // Jatuhnya item
+            item.y += item.speed;
+
+            // Deteksi tabrakan (Berhasil menangkap)
+            if (item.y + item.radius >= player.y &&
+                item.x >= player.x &&
+                item.x <= player.x + player.width) {
+                
+                score++;
+                scoreElement.innerText = score;
+                
+                // Reset item ke atas dengan posisi X acak
+                item.y = -20;
+                item.x = Math.random() * (canvas.width - item.radius * 2) + item.radius;
+                
+                // Tingkatkan kesulitan perlahan
+                item.speed += 0.25; 
+            }
+
+            // Gagal menangkap
+            if (item.y > canvas.height) {
+                gameOver = true;
+                ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = "white";
+                ctx.font = "bold 32px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
+                
+                ctx.font = "18px Arial";
+                ctx.fillStyle = "#ffdd57";
+                ctx.fillText("Klik area game untuk main lagi", canvas.width / 2, canvas.height / 2 + 40);
+            } else {
+                animationId = requestAnimationFrame(update);
+            }
+        }
+
+        // Kontrol Keyboard
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowRight") player.dx = player.speed;
+            else if (e.key === "ArrowLeft") player.dx = -player.speed;
+        });
+
+        document.addEventListener("keyup", (e) => {
+            if (e.key === "ArrowRight" || e.key === "ArrowLeft") player.dx = 0;
+        });
+
+        // Restart saat diklik
+        canvas.addEventListener("click", () => {
+            if (gameOver) {
+                score = 0;
+                scoreElement.innerText = score;
+                item.y = -20;
+                item.speed = 3;
+                gameOver = false;
+                update();
+            }
+        });
+
+        // Mulai game
+        update();
+    </script>
+</body>
+</html>
