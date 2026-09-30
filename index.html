@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>REITO Catch: Arcade Edition</title>
+    <title>REITO Catch: Edisi Spesial Promo</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -11,6 +11,8 @@
             --secondary: #FEB47B;
             --bg-dark: #121212;
             --panel-bg: rgba(255, 255, 255, 0.08);
+            --wa-color: #25D366;
+            --wa-hover: #1EBE57;
         }
         body {
             margin: 0;
@@ -78,10 +80,12 @@
             box-shadow: inset 0 4px 15px rgba(0,0,0,0.6);
         }
         canvas { background: #1a1a1a; display: block; }
+        
+        /* Overlays */
         .overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(18, 18, 18, 0.9);
+            background: rgba(18, 18, 18, 0.95);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -91,27 +95,80 @@
             pointer-events: none;
             transition: opacity 0.3s ease;
         }
-        .overlay.show {
-            opacity: 1;
-            pointer-events: auto;
+        .overlay.show { opacity: 1; pointer-events: auto; }
+        .overlay h2 { font-size: 2rem; margin: 0 0 5px 0; color: var(--primary); }
+        .overlay p { font-size: 1rem; margin-bottom: 15px; color: #ddd; text-align: center; padding: 0 15px;}
+        
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 80%;
+            margin-top: 10px;
         }
-        .overlay h2 { font-size: 2rem; margin: 0 0 10px 0; color: var(--primary); }
-        .overlay p { font-size: 1.1rem; margin-bottom: 25px; color: #ddd; }
         button {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
             border: none;
-            padding: 12px 28px;
+            padding: 12px 24px;
             border-radius: 30px;
-            color: #121212;
             font-weight: 700;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
+            font-family: inherit;
         }
-        button:hover {
+        .btn-play {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #121212;
+        }
+        .btn-play:hover {
             transform: scale(1.05);
             box-shadow: 0 6px 20px rgba(255, 126, 95, 0.4);
         }
+        .btn-wa {
+            background: var(--wa-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-wa:hover {
+            background: var(--wa-hover);
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+        }
+
+        /* Promo Box */
+        #promo-container {
+            display: none; /* Disembunyikan secara default */
+            background: rgba(255, 215, 0, 0.1);
+            border: 2px dashed #FFD700;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            animation: pulse 1.5s infinite;
+        }
+        #promo-container p { margin: 0 0 5px 0; color: #FFD700; font-size: 0.9rem; font-weight: 600;}
+        .promo-code {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: white;
+            background: #222;
+            padding: 5px 15px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+        .screenshot-hint { font-size: 0.75rem !important; color: #aaa !important; margin: 0 !important; }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 215, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+        }
+
         .studio-credit { margin-top: 15px; font-size: 0.85rem; color: #777; }
         .studio-credit span { color: var(--secondary); font-weight: 600; }
     </style>
@@ -130,18 +187,32 @@
         <div class="canvas-wrapper" id="canvas-wrapper">
             <canvas id="gameCanvas" width="360" height="480"></canvas>
             
-            <!-- Layar Mulai Awal (Dibutuhkan untuk izin Audio) -->
+            <!-- Layar Mulai Awal -->
             <div id="startScreen" class="overlay show">
                 <h2>Siap Menangkap?</h2>
-                <p>Kumpulkan Dimsum, hindari rintangan!</p>
-                <button id="startBtn">Mulai Game</button>
+                <p>Cetak skor 100 untuk membuka kode voucher diskon rahasia!</p>
+                <div class="btn-group">
+                    <button id="startBtn" class="btn-play">Mulai Game</button>
+                    <button class="btn-wa" onclick="orderWA()">📱 Pesan Dimsum</button>
+                </div>
             </div>
 
             <!-- Layar Game Over -->
             <div id="gameOverScreen" class="overlay">
                 <h2>Game Over!</h2>
-                <p>Skor Akhir: <span id="final-score">0</span></p>
-                <button id="restartBtn">Main Lagi</button>
+                <p style="margin-bottom: 5px;">Skor Akhir: <span id="final-score" style="font-weight: bold; color: var(--primary);">0</span></p>
+                
+                <!-- Kotak Promo (Hanya muncul jika skor >= target) -->
+                <div id="promo-container">
+                    <p>🎉 SELAMAT! VOUCHER TERBUKA 🎉</p>
+                    <div class="promo-code">REITO-10K</div>
+                    <p class="screenshot-hint">Screenshot layar ini & kirim ke admin!</p>
+                </div>
+
+                <div class="btn-group">
+                    <button id="restartBtn" class="btn-play">Main Lagi</button>
+                    <button class="btn-wa" onclick="orderWA()">📱 Pesan Sekarang</button>
+                </div>
             </div>
         </div>
     </div>
@@ -158,51 +229,57 @@
         
         const startScreen = document.getElementById('startScreen');
         const gameOverScreen = document.getElementById('gameOverScreen');
+        const promoContainer = document.getElementById('promo-container');
         
-        // ---- SISTEM AUDIO (Sintesis 8-Bit) ----
+        // Target skor untuk membuka kode promo (Bisa diubah untuk testing)
+        const TARGET_SCORE_PROMO = 100; 
+
+        // ---- FUNGSI CTA WHATSAPP ----
+        function orderWA() {
+            // Ganti 6280000000000 dengan nomor WhatsApp admin REITO
+            const waNumber = "6280000000000"; 
+            let waText = "Halo Admin REITO, saya mau pesan dimsum yang lezat!";
+            
+            // Jika pemain sudah memenangkan promo, sisipkan pesan klaim
+            if (score >= TARGET_SCORE_PROMO) {
+                waText = "Halo Admin REITO, saya dapat skor " + score + " di game REITO Catch dan mau klaim kode promo REITO-10K! Ini pesanannya...";
+            }
+            
+            const encodedText = encodeURIComponent(waText);
+            window.open(`https://wa.me/${waNumber}?text=${encodedText}`, '_blank');
+        }
+
+        // ---- SISTEM AUDIO ----
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         let audioCtx;
         let bgmInterval;
-        const bgmNotes = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63]; // Arpeggio C Major
+        const bgmNotes = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63]; 
         let noteIdx = 0;
 
-        function initAudio() {
-            if (!audioCtx) audioCtx = new AudioContext();
-        }
+        function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); }
 
         function playSound(type) {
             if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            
+            osc.connect(gain); gain.connect(audioCtx.destination);
             const now = audioCtx.currentTime;
             
             if (type === 'pop') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(400, now);
+                osc.type = 'sine'; osc.frequency.setValueAtTime(400, now);
                 osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
-                gain.gain.setValueAtTime(0.3, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                osc.start(now);
-                osc.stop(now + 0.1);
+                gain.gain.setValueAtTime(0.3, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
             } else if (type === 'damage') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, now);
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now);
                 osc.frequency.exponentialRampToValueAtTime(50, now + 0.3);
-                gain.gain.setValueAtTime(0.4, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-                osc.start(now);
-                osc.stop(now + 0.3);
+                gain.gain.setValueAtTime(0.4, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
             } else if (type === 'powerup') {
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(600, now);
+                osc.type = 'square'; osc.frequency.setValueAtTime(600, now);
                 osc.frequency.linearRampToValueAtTime(1200, now + 0.2);
-                gain.gain.setValueAtTime(0.2, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-                osc.start(now);
-                osc.stop(now + 0.2);
+                gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now); osc.stop(now + 0.2);
             }
         }
 
@@ -210,17 +287,13 @@
             if (!audioCtx || isGameOver) return;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.type = 'square';
-            osc.frequency.value = bgmNotes[noteIdx];
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
+            osc.type = 'square'; osc.frequency.value = bgmNotes[noteIdx];
+            osc.connect(gain); gain.connect(audioCtx.destination);
             
             const now = audioCtx.currentTime;
             gain.gain.setValueAtTime(0.02, now);
             gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-            
-            osc.start(now);
-            osc.stop(now + 0.2);
+            osc.start(now); osc.stop(now + 0.2);
             noteIdx = (noteIdx + 1) % bgmNotes.length;
         }
 
@@ -241,38 +314,23 @@
             { emoji: '🧲', type: 'magnet', points: 0, speedMult: 1.2, prob: 2.5 }
         ];
 
-        // ---- PARTIKEL VISUAL ----
         function createParticles(x, y, color) {
             for (let i = 0; i < 12; i++) {
-                particles.push({
-                    x: x, y: y,
-                    vx: (Math.random() - 0.5) * 8,
-                    vy: (Math.random() - 0.5) * 8,
-                    life: 1,
-                    color: color
-                });
+                particles.push({ x: x, y: y, vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8, life: 1, color: color });
             }
         }
 
         function drawParticles() {
             for (let i = particles.length - 1; i >= 0; i--) {
-                let p = particles[i];
-                p.x += p.vx;
-                p.y += p.vy;
-                p.life -= 0.05;
-
+                let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life -= 0.05;
                 ctx.globalAlpha = Math.max(0, p.life);
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-                ctx.fillStyle = p.color;
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                ctx.fillStyle = p.color; ctx.fill();
                 ctx.globalAlpha = 1.0;
-
                 if (p.life <= 0) particles.splice(i, 1);
             }
         }
 
-        // ---- LOGIKA UTAMA ----
         function spawnItem() {
             const rand = Math.random() * 100;
             let cumulative = 0, selectedItem = itemConfig[0];
@@ -284,10 +342,8 @@
         }
 
         function takeDamage(isBomb) {
-            lives--;
-            playSound('damage');
-            let hearts = "";
-            for(let i=0; i<lives; i++) hearts += "❤️";
+            lives--; playSound('damage');
+            let hearts = ""; for(let i=0; i<lives; i++) hearts += "❤️";
             livesEl.innerText = hearts === "" ? "💀" : hearts;
             
             wrapper.style.boxShadow = "inset 0 0 40px rgba(255, 0, 0, 0.8)";
@@ -301,11 +357,9 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             frameCount++;
 
-            // Timer Power-up
             if (powerupTimer.slow > 0) powerupTimer.slow--;
             if (powerupTimer.magnet > 0) powerupTimer.magnet--;
             
-            // Update UI Powerup
             let statusText = "";
             if (powerupTimer.slow > 0) statusText += "⏳";
             if (powerupTimer.magnet > 0) statusText += "🧲";
@@ -315,7 +369,7 @@
             if (frameCount % currentSpawnInterval === 0) spawnItem();
 
             let currentSpeed = baseSpeed + (score * 0.02);
-            if (powerupTimer.slow > 0) currentSpeed *= 0.4; // Waktu melambat
+            if (powerupTimer.slow > 0) currentSpeed *= 0.4; 
 
             player.x += player.dx;
             if (player.x < 30) player.x = 30;
@@ -324,47 +378,34 @@
             for (let i = fallingItems.length - 1; i >= 0; i--) {
                 let item = fallingItems[i];
 
-                // Efek Magnet
                 if (powerupTimer.magnet > 0 && item.type === 'food') {
-                    let dx = player.x - item.x;
-                    let dy = player.y - item.y;
+                    let dx = player.x - item.x, dy = player.y - item.y;
                     let dist = Math.sqrt(dx*dx + dy*dy);
-                    if (dist < 180) { // Jarak tarikan magnet
-                        item.x += (dx / dist) * 4;
-                        item.y += (dy / dist) * 4;
-                    }
+                    if (dist < 180) { item.x += (dx / dist) * 4; item.y += (dy / dist) * 4; }
                 }
 
                 item.y += currentSpeed * item.speedMult;
-                ctx.font = '35px Arial';
-                ctx.fillText(item.emoji, item.x, item.y);
+                ctx.font = '35px Arial'; ctx.fillText(item.emoji, item.x, item.y);
 
-                let distY = Math.abs(item.y - player.y);
-                let distX = Math.abs(item.x - player.x);
+                let distY = Math.abs(item.y - player.y), distX = Math.abs(item.x - player.x);
 
                 if (distY < 30 && distX < 40) {
                     if (item.type === 'food') {
-                        score += item.points;
-                        playSound('pop');
-                        createParticles(item.x, item.y, '#FFD700');
+                        score += item.points; playSound('pop'); createParticles(item.x, item.y, '#FFD700');
                     } else if (item.type === 'trap') {
-                        score = Math.max(0, score + item.points);
-                        playSound('damage');
+                        score = Math.max(0, score + item.points); playSound('damage');
                     } else if (item.type === 'bomb') {
                         takeDamage(true);
                     } else if (item.type === 'slow') {
-                        powerupTimer.slow = 300; // ~5 detik
-                        playSound('powerup');
+                        powerupTimer.slow = 300; playSound('powerup');
                     } else if (item.type === 'magnet') {
-                        powerupTimer.magnet = 400; // ~6.5 detik
-                        playSound('powerup');
+                        powerupTimer.magnet = 400; playSound('powerup');
                     }
                     
                     document.getElementById('score').innerText = score;
                     fallingItems.splice(i, 1);
                     continue;
                 }
-
                 if (item.y > canvas.height + 20) {
                     if (item.type === 'food') takeDamage(false);
                     fallingItems.splice(i, 1);
@@ -372,11 +413,8 @@
             }
 
             drawParticles();
-            ctx.font = '45px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+            ctx.font = '45px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.fillText(player.emoji, player.x, player.y);
-
             requestAnimationFrame(update);
         }
 
@@ -384,8 +422,7 @@
             initAudio();
             if (audioCtx.state === 'suspended') audioCtx.resume();
             
-            isGameOver = false;
-            score = 0; lives = 3; frameCount = 0; fallingItems = []; particles = [];
+            isGameOver = false; score = 0; lives = 3; frameCount = 0; fallingItems = []; particles = [];
             powerupTimer = { slow: 0, magnet: 0 };
             document.getElementById('score').innerText = score;
             livesEl.innerText = "❤️❤️❤️";
@@ -393,17 +430,25 @@
             
             startScreen.classList.remove('show');
             gameOverScreen.classList.remove('show');
+            promoContainer.style.display = 'none'; // Sembunyikan promo saat mulai baru
             
             clearInterval(bgmInterval);
-            bgmInterval = setInterval(playBGMNote, 200); // Mulai BGM
-
+            bgmInterval = setInterval(playBGMNote, 200); 
             update();
         }
 
         function endGame() {
             isGameOver = true;
-            clearInterval(bgmInterval); // Matikan BGM
+            clearInterval(bgmInterval); 
             document.getElementById('final-score').innerText = score;
+            
+            // Logika Penentuan Promo
+            if (score >= TARGET_SCORE_PROMO) {
+                promoContainer.style.display = 'block';
+            } else {
+                promoContainer.style.display = 'none';
+            }
+
             gameOverScreen.classList.add('show');
         }
 
