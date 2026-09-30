@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>REITO Catch</title>
+    <title>REITO Catch: Level Up</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -23,7 +23,7 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
-            touch-action: none; /* Mencegah layar ter-scroll saat disentuh di HP */
+            touch-action: none;
         }
         #game-container {
             position: relative;
@@ -31,17 +31,18 @@
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border-radius: 24px;
-            padding: 24px;
+            padding: 20px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
             border: 1px solid rgba(255, 255, 255, 0.1);
             text-align: center;
+            width: 360px;
         }
         header {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
-            margin-bottom: 20px;
-            padding: 0 5px;
+            margin-bottom: 15px;
+            gap: 10px;
         }
         h1 {
             margin: 0;
@@ -52,20 +53,27 @@
             text-transform: uppercase;
             letter-spacing: 1.5px;
         }
-        .score-box {
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+        .stat-box {
             background: rgba(0, 0, 0, 0.5);
-            padding: 6px 18px;
+            padding: 6px 14px;
             border-radius: 30px;
             font-weight: 600;
-            font-size: 1.1rem;
+            font-size: 1rem;
             border: 1px solid rgba(255, 126, 95, 0.3);
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
+        #lives { color: #ff4757; letter-spacing: 2px;}
         .canvas-wrapper {
             position: relative;
             border-radius: 16px;
             overflow: hidden;
             box-shadow: inset 0 4px 15px rgba(0,0,0,0.6);
+            transition: box-shadow 0.2s ease;
         }
         canvas {
             background: #1a1a1a;
@@ -89,12 +97,12 @@
             pointer-events: auto;
         }
         #overlay h2 {
-            font-size: 2.2rem;
+            font-size: 2rem;
             margin: 0 0 10px 0;
             color: var(--primary);
         }
         #overlay p {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             margin-bottom: 25px;
             color: #ddd;
         }
@@ -108,17 +116,15 @@
             font-size: 1.1rem;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
-            font-family: inherit;
         }
         button:hover {
             transform: scale(1.05);
             box-shadow: 0 6px 20px rgba(255, 126, 95, 0.4);
         }
         .studio-credit {
-            margin-top: 20px;
+            margin-top: 15px;
             font-size: 0.85rem;
             color: #777;
-            letter-spacing: 0.5px;
         }
         .studio-credit span {
             color: var(--secondary);
@@ -131,16 +137,19 @@
     <div id="game-container">
         <header>
             <h1>REITO Catch</h1>
-            <div class="score-box">Skor: <span id="score">0</span></div>
+            <div class="stats-bar">
+                <div class="stat-box">Nyawa: <span id="lives">❤️❤️❤️</span></div>
+                <div class="stat-box">Skor: <span id="score">0</span></div>
+            </div>
         </header>
         
-        <div class="canvas-wrapper">
+        <div class="canvas-wrapper" id="canvas-wrapper">
             <canvas id="gameCanvas" width="360" height="480"></canvas>
             
             <div id="overlay">
                 <h2>Game Over!</h2>
-                <p>Skor Akhir: <span id="final-score">0</span></p>
-                <button id="restartBtn">Main Lagi</button>
+                <p>Skor Akhir Anda: <span id="final-score">0</span></p>
+                <button id="restartBtn">Mulai Ulang</button>
             </div>
         </div>
     </div>
@@ -150,91 +159,136 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        const wrapper = document.getElementById('canvas-wrapper');
         const scoreEl = document.getElementById('score');
+        const livesEl = document.getElementById('lives');
         const overlay = document.getElementById('overlay');
         const finalScoreEl = document.getElementById('final-score');
         const restartBtn = document.getElementById('restartBtn');
 
         let score = 0;
+        let lives = 3;
         let isGameOver = false;
         let animationId;
+        let frameCount = 0;
+        let baseSpeed = 3;
         
-        // Menggunakan emoji sebagai grafis utama (anti-error render)
-        const basketEmoji = '🧺';
-        const dimsumEmoji = '🥟';
+        let fallingItems = [];
 
-        // State Pemain
-        const player = {
-            x: canvas.width / 2,
-            y: canvas.height - 40,
-            speed: 7,
-            dx: 0
-        };
+        // Konfigurasi Keranjang
+        const player = { x: canvas.width / 2, y: canvas.height - 40, speed: 7, dx: 0, emoji: '🧺' };
 
-        // State Dimsum
-        const item = {
-            x: Math.random() * (canvas.width - 40) + 20,
-            y: -30,
-            speed: 3
-        };
+        // Blueprint variasi item
+        const itemConfig = [
+            { emoji: '🥟', type: 'food', points: 1, speedMult: 1, prob: 50 },    // Siomay Reguler
+            { emoji: '🍤', type: 'food', points: 2, speedMult: 1.5, prob: 20 },  // Hakau Udang
+            { emoji: '🌯', type: 'food', points: 3, speedMult: 1.2, prob: 10 },  // Lumpia
+            { emoji: '🌶️', type: 'trap', points: -2, speedMult: 1, prob: 15 },   // Cabai
+            { emoji: '💣', type: 'bomb', points: 0, speedMult: 1.6, prob: 5 }    // Bom
+        ];
 
         function drawPlayer() {
             ctx.font = '45px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(basketEmoji, player.x, player.y);
+            ctx.fillText(player.emoji, player.x, player.y);
         }
 
-        function drawItem() {
-            ctx.font = '35px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(dimsumEmoji, item.x, item.y);
+        function spawnItem() {
+            // Hitung probabilitas acak 1-100
+            const rand = Math.random() * 100;
+            let cumulative = 0;
+            let selectedItem = itemConfig[0];
+
+            for (let item of itemConfig) {
+                cumulative += item.prob;
+                if (rand <= cumulative) {
+                    selectedItem = item;
+                    break;
+                }
+            }
+
+            fallingItems.push({
+                x: Math.random() * (canvas.width - 50) + 25,
+                y: -30,
+                ...selectedItem
+            });
         }
 
-        function resetItem() {
-            item.y = -30;
-            item.x = Math.random() * (canvas.width - 50) + 25;
-            item.speed += 0.25; // Kesulitan meningkat secara bertahap
+        function updateLivesDisplay() {
+            let hearts = "";
+            for(let i=0; i<lives; i++) hearts += "❤️";
+            livesEl.innerText = hearts === "" ? "💀" : hearts;
+        }
+
+        function takeDamage(isBomb) {
+            lives--;
+            updateLivesDisplay();
+            
+            // Efek visual layar berkedip merah
+            wrapper.style.boxShadow = "inset 0 0 40px rgba(255, 0, 0, 0.8)";
+            setTimeout(() => {
+                if(!isGameOver) wrapper.style.boxShadow = "inset 0 4px 15px rgba(0,0,0,0.6)";
+            }, 200);
+
+            if (lives <= 0) endGame();
         }
 
         function update() {
             if (isGameOver) return;
-
-            // Bersihkan frame sebelumnya
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            frameCount++;
 
-            // Pergerakan pemain (keyboard)
+            // Mekanik Kesulitan Progresif: 
+            // Semakin tinggi skor, interval kemunculan item semakin cepat (min 20 frame)
+            let currentSpawnInterval = Math.max(20, 80 - Math.floor(score / 15) * 5);
+            if (frameCount % currentSpawnInterval === 0) spawnItem();
+
+            // Peningkatan kecepatan bertahap
+            let currentSpeed = baseSpeed + (score * 0.02);
+
+            // Pergerakan pemain
             player.x += player.dx;
-            
-            // Batas layar untuk pemain
             if (player.x < 30) player.x = 30;
             if (player.x > canvas.width - 30) player.x = canvas.width - 30;
 
-            // Pergerakan dimsum
-            item.y += item.speed;
+            // Render dan update semua item yang jatuh (Loop terbalik agar aman saat menghapus array)
+            for (let i = fallingItems.length - 1; i >= 0; i--) {
+                let item = fallingItems[i];
+                item.y += currentSpeed * item.speedMult;
 
-            // Deteksi Tabrakan (Hitbox disesuaikan dengan ukuran font emoji)
-            let distY = Math.abs(item.y - player.y);
-            let distX = Math.abs(item.x - player.x);
+                ctx.font = '35px Arial';
+                ctx.fillText(item.emoji, item.x, item.y);
 
-            if (distY < 30 && distX < 40) {
-                score++;
-                scoreEl.innerText = score;
-                resetItem();
+                // Deteksi Tabrakan
+                let distY = Math.abs(item.y - player.y);
+                let distX = Math.abs(item.x - player.x);
+
+                if (distY < 30 && distX < 40) {
+                    if (item.type === 'food') {
+                        score += item.points;
+                    } else if (item.type === 'trap') {
+                        score = Math.max(0, score + item.points); // Poin tidak bisa minus
+                    } else if (item.type === 'bomb') {
+                        takeDamage(true);
+                    }
+                    
+                    scoreEl.innerText = score;
+                    fallingItems.splice(i, 1); // Hapus item setelah tertangkap
+                    continue;
+                }
+
+                // Item melewati batas bawah layar
+                if (item.y > canvas.height + 20) {
+                    if (item.type === 'food') {
+                        takeDamage(false); // Gagal menangkap makanan = kurang nyawa
+                    }
+                    fallingItems.splice(i, 1); // Rintangan yang lewat dibiarkan saja
+                }
             }
 
-            // Gagal menangkap (melewati batas bawah)
-            if (item.y > canvas.height + 20) {
-                endGame();
-                return;
-            }
-
-            // Gambar elemen
             drawPlayer();
-            drawItem();
-
-            animationId = requestAnimationFrame(update);
+            if (lives > 0) animationId = requestAnimationFrame(update);
         }
 
         function endGame() {
@@ -246,17 +300,18 @@
         function restartGame() {
             isGameOver = false;
             score = 0;
+            lives = 3;
+            fallingItems = [];
+            frameCount = 0;
             scoreEl.innerText = score;
-            item.speed = 3;
-            item.y = -30;
+            updateLivesDisplay();
             player.x = canvas.width / 2;
+            wrapper.style.boxShadow = "inset 0 4px 15px rgba(0,0,0,0.6)";
             overlay.classList.remove('show');
             update();
         }
 
         // --- Kontrol ---
-
-        // Input Keyboard
         window.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowLeft') player.dx = -player.speed;
             if (e.key === 'ArrowRight') player.dx = player.speed;
@@ -266,32 +321,21 @@
             if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') player.dx = 0;
         });
 
-        // Input Mouse / Sentuhan (Paling responsif)
         function handleMove(e) {
             if (isGameOver) return;
             const rect = canvas.getBoundingClientRect();
-            
-            let clientX = e.clientX;
-            // Deteksi jika dari layar sentuh
-            if (e.touches && e.touches.length > 0) {
-                clientX = e.touches[0].clientX;
-            }
-            
+            let clientX = e.clientX || (e.touches && e.touches[0].clientX);
             if (clientX) {
                 let x = clientX - rect.left;
-                if (x > 30 && x < canvas.width - 30) {
-                    player.x = x;
-                }
+                if (x > 30 && x < canvas.width - 30) player.x = x;
             }
         }
 
         canvas.addEventListener('mousemove', handleMove);
         canvas.addEventListener('touchmove', handleMove, { passive: true });
-
-        // Tombol Restart
         restartBtn.addEventListener('click', restartGame);
 
-        // Inisiasi Game
+        // Mulai Game
         update();
     </script>
 </body>
