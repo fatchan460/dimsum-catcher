@@ -3,281 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>REITO Catch: Edisi Spesial Promo</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            /* Palet Warna Diambil dari Logo Reito */
-            --primary: #00086B; /* Biru Navy Peat Reito */
-            --secondary: #FDE02F; /* Kuning Cerah Reito */
-            --bg-light: #F4F7F6;
-            --panel-bg: #FFFFFF;
-            --wa-color: #25D366;
-            --wa-hover: #1EBE57;
-            --text-dark: #333333;
-        }
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: linear-gradient(135deg, #E3EAF5, var(--bg-light));
-            color: var(--text-dark);
-            font-family: 'Poppins', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            touch-action: none;
-        }
-        #game-container {
-            position: relative;
-            background: var(--panel-bg);
-            border-radius: 24px;
-            padding: 24px 20px 20px 20px;
-            box-shadow: 0 12px 40px rgba(0, 8, 107, 0.15);
-            border: 2px solid rgba(0, 8, 107, 0.05);
-            text-align: center;
-            width: 360px;
-        }
-        header {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 18px;
-            gap: 15px;
-        }
-        /* Integrasi Logo */
-        .brand-logo {
-            max-width: 160px;
-            height: auto;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05));
-        }
-        .stats-bar {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-        }
-        .stat-box {
-            background: rgba(0, 8, 107, 0.05);
-            padding: 6px 14px;
-            border-radius: 30px;
-            font-weight: 600;
-            font-size: 1rem;
-            color: var(--primary);
-            border: 1px solid rgba(0, 8, 107, 0.1);
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        #powerup-status { font-size: 1.2rem; }
-        .canvas-wrapper {
-            position: relative;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: inset 0 4px 15px rgba(0, 8, 107, 0.1);
-            border: 2px solid rgba(0, 8, 107, 0.05);
-            background: #EAF2F8; /* Latar kanvas cerah bernuansa biru es */
-        }
-        canvas { display: block; }
-        
-        /* Overlays (Layar Cerah Transparan) */
-        .overlay {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(4px);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-        .overlay.show { opacity: 1; pointer-events: auto; }
-        .overlay h2 { font-size: 1.8rem; margin: 0 0 5px 0; color: var(--primary); }
-        .overlay p { font-size: 0.95rem; margin-bottom: 15px; color: var(--text-dark); text-align: center; padding: 0 15px; font-weight: 600;}
-        
-        /* Buttons */
-        .btn-group {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            width: 85%;
-            margin-top: 10px;
-        }
-        button {
-            border: none;
-            padding: 12px 24px;
-            border-radius: 30px;
-            font-weight: 700;
-            font-size: 1.05rem;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
-            font-family: inherit;
-        }
-        .btn-play {
-            background: var(--primary);
-            color: white;
-            border: 2px solid var(--primary);
-        }
-        .btn-play:hover {
-            transform: scale(1.05);
-            background: white;
-            color: var(--primary);
-            box-shadow: 0 6px 20px rgba(0, 8, 107, 0.2);
-        }
-        .btn-wa {
-            background: var(--wa-color);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        .btn-wa:hover {
-            background: var(--wa-hover);
-            transform: scale(1.05);
-            box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
-        }
-
-        /* Promo Box Khusus */
-        #promo-container {
-            display: none; 
-            background: rgba(253, 224, 47, 0.15);
-            border: 2px dashed var(--primary);
-            padding: 12px;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            animation: pulse 1.5s infinite;
-        }
-        #promo-container p { margin: 0 0 5px 0; color: var(--primary); font-size: 0.85rem; font-weight: 700;}
-        .promo-code {
-            font-size: 1.4rem;
-            font-weight: 700;
-            letter-spacing: 2px;
-            color: var(--primary);
-            background: var(--secondary);
-            padding: 5px 15px;
-            border-radius: 8px;
-            display: inline-block;
-            margin-bottom: 5px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .screenshot-hint { font-size: 0.75rem !important; color: #666 !important; margin: 0 !important; font-weight: 400 !important; }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(0, 8, 107, 0.2); }
-            70% { box-shadow: 0 0 0 10px rgba(0, 8, 107, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(0, 8, 107, 0); }
-        }
-
-        .studio-credit { margin-top: 20px; font-size: 0.85rem; color: #888; font-weight: 600; }
-        .studio-credit span { color: var(--primary); font-weight: 700; }
-    </style>
-</head>
-<body>
-
-    <div id="game-container">
-        <header>
-            <img src="reito-01 (1).png" alt="Reito Logo" class="brand-logo">
-            <div class="stats-bar">
-                <div class="stat-box">Nyawa: <span id="lives">❤️❤️❤️</span></div>
-                <div class="stat-box"><span id="powerup-status"></span> Skor: <span id="score">0</span></div>
-            </div>
-        </header>
-        
-        <div class="canvas-wrapper" id="canvas-wrapper">
-            <canvas id="gameCanvas" width="360" height="440"></canvas>
-            
-            <!-- Layar Mulai Awal -->
-            <div id="startScreen" class="overlay show">
-                <h2>Siap Menangkap?</h2>
-                <p>Cetak skor 100 untuk membuka kode voucher diskon rahasia!</p>
-                <div class="btn-group">
-                    <button id="startBtn" class="btn-play">Mulai Game</button>
-                    <button class="btn-wa" onclick="orderWA()">📱 Pesan Dimsum</button>
-                </div>
-            </div>
-
-            <!-- Layar Game Over -->
-            <div id="gameOverScreen" class="overlay">
-                <h2>Game Over!</h2>
-                <p style="margin-bottom: 5px;">Skor Akhir: <span id="final-score" style="font-weight: 800; color: var(--primary); font-size: 1.2rem;">0</span></p>
-                
-                <!-- Kotak Promo -->
-                <div id="promo-container">
-                    <p>🎉 SELAMAT! VOUCHER TERBUKA 🎉</p>
-                    <div class="promo-code">REITO-10K</div>
-                    <p class="screenshot-hint">Screenshot layar ini & kirim ke admin!</p>
-                </div>
-
-                <div class="btn-group">
-                    <button id="restartBtn" class="btn-play">Main Lagi</button>
-                    <button class="btn-wa" onclick="orderWA()">📱 Pesan Sekarang</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="studio-credit">Powered by <span>Asobi Works</span></div>
-
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const wrapper = document.getElementById('canvas-wrapper');
-        const scoreEl = document.getElementById('score');
-        const livesEl = document.getElementById('lives');
-        const powerupStatusEl = document.getElementById('powerup-status');
-        
-        const startScreen = document.getElementById('startScreen');
-        const gameOverScreen = document.getElementById('gameOverScreen');
-        const promoContainer = document.getElementById('promo-container');
-        
-        const TARGET_SCORE_PROMO = 100; 
-
-        function orderWA() {
-            const waNumber = "6280000000000"; 
-            let waText = "Halo Admin REITO, saya mau pesan dimsum yang lezat!";
-            if (score >= TARGET_SCORE_PROMO) {
-                waText = "Halo Admin REITO, saya dapat skor " + score + " di game REITO Catch dan mau klaim kode promo REITO-10K! Ini pesanannya...";
-            }
-            const encodedText = encodeURIComponent(waText);
-            window.open(`https://wa.me/${waNumber}?text=${encodedText}`, '_blank');
-        }
-
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        let audioCtx;
-        let bgmInterval;
-        const bgmNotes = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63]; 
-        let noteIdx = 0;
-
-        function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); }
-
-        function playSound(type) {
-            if (!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            const now = audioCtx.currentTime;
-            
-            if (type === 'pop') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(400, now);
-                osc.frequency.exponentialRampToDesain visual game telah dirombak total menggunakan palet warna yang diekstrak langsung dari logo REITO Anda, yaitu **Navy Blue (Biru Tua)** dan **Bright Yellow (Kuning Cerah)**. Tema *dark mode* sebelumnya telah diganti menjadi gaya *bright modern* yang bersih, profesional, dan lebih cocok untuk representasi merek makanan olahan premium.
-
-Logo `reito-01 (1).png` juga telah disisipkan di bagian atas (*header*) permainan.
-
-Pastikan file gambar `reito-01 (1).png` berada di dalam folder (atau *repository* GitHub) yang sama persis dengan file `index.html` ini. Berikut adalah kode lengkap terbarunya:
-
-```html
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>REITO Catch: Premium Edition</title>
-    <link href="[https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap](https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap)" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             /* Palet Warna dari Logo REITO */
@@ -453,9 +180,7 @@ Pastikan file gambar `reito-01 (1).png` berada di dalam folder (atau *repository
 
     <div id="game-container">
         <header>
-            <!-- Logo REITO Dimasukkan di Sini -->
             <img src="reito-01 (1).png" alt="REITO Logo" class="brand-logo">
-            
             <div class="stats-bar">
                 <div class="stat-box"><span id="lives">❤️❤️❤️</span></div>
                 <div class="stat-box"><span id="powerup-status"></span> Skor: <span id="score">0</span></div>
@@ -463,7 +188,7 @@ Pastikan file gambar `reito-01 (1).png` berada di dalam folder (atau *repository
         </header>
         
         <div class="canvas-wrapper" id="canvas-wrapper">
-            <canvas id="gameCanvas" width="360" height="480"></canvas>
+            <canvas id="gameCanvas" width="360" height="440"></canvas>
             
             <!-- Layar Mulai Awal -->
             <div id="startScreen" class="overlay show">
@@ -521,7 +246,7 @@ Pastikan file gambar `reito-01 (1).png` berada di dalam folder (atau *repository
             }
             
             const encodedText = encodeURIComponent(waText);
-            window.open(`[https://wa.me/$](https://wa.me/$){waNumber}?text=${encodedText}`, '_blank');
+            window.open(`https://wa.me/${waNumber}?text=${encodedText}`, '_blank');
         }
 
         // ---- SISTEM AUDIO ----
@@ -566,7 +291,7 @@ Pastikan file gambar `reito-01 (1).png` berada di dalam folder (atau *repository
             osc.connect(gain); gain.connect(audioCtx.destination);
             
             const now = audioCtx.currentTime;
-            gain.gain.setValueAtTime(0.015, now); // Volume sedikit diturunkan untuk tema terang
+            gain.gain.setValueAtTime(0.015, now); 
             gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
             osc.start(now); osc.stop(now + 0.2);
             noteIdx = (noteIdx + 1) % bgmNotes.length;
@@ -574,7 +299,7 @@ Pastikan file gambar `reito-01 (1).png` berada di dalam folder (atau *repository
 
         // ---- STATE GAME ----
         let score = 0, lives = 3, isGameOver = true, frameCount = 0;
-        let baseSpeed = 3.5, fallingItems = [], particles = []; // Kecepatan dasar sedikit dinaikkan
+        let baseSpeed = 3.5, fallingItems = [], particles = []; 
         let powerupTimer = { slow: 0, magnet: 0 };
         
         const player = { x: canvas.width / 2, y: canvas.height - 40, speed: 7, dx: 0, emoji: '🧺' };
@@ -590,7 +315,7 @@ Pastikan file gambar `reito-01 (1).png` berada di dalam folder (atau *repository
         ];
 
         function createParticles(x, y, isBlue = false) {
-            const color = isBlue ? '#000B63' : '#FFDE00'; // Partikel menggunakan warna REITO
+            const color = isBlue ? '#000B63' : '#FFDE00'; 
             for (let i = 0; i < 12; i++) {
                 particles.push({ x: x, y: y, vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8, life: 1, color: color });
             }
@@ -622,7 +347,6 @@ Pastikan file gambar `reito-01 (1).png` berada di dalam folder (atau *repository
             let hearts = ""; for(let i=0; i<lives; i++) hearts += "❤️";
             livesEl.innerText = hearts === "" ? "💀" : hearts;
             
-            // Efek kedip disesuaikan untuk tema terang
             wrapper.style.boxShadow = "inset 0 0 40px rgba(255, 0, 0, 0.4)";
             wrapper.style.borderColor = "red";
             setTimeout(() => { 
@@ -676,7 +400,6 @@ Pastikan file gambar `reito-01 (1).png` berada di dalam folder (atau *repository
                     if (item.type === 'food') {
                         score += item.points; 
                         playSound('pop'); 
-                        // Selang-seling warna partikel kuning dan biru
                         createParticles(item.x, item.y, Math.random() > 0.5);
                     } else if (item.type === 'trap') {
                         score = Math.max(0, score + item.points); playSound('damage');
