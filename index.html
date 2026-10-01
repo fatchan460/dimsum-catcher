@@ -181,6 +181,7 @@
     <div id="game-container">
         <header>
             <img src="reito-01 (1).png" alt="REITO Logo" class="brand-logo">
+            
             <div class="stats-bar">
                 <div class="stat-box"><span id="lives">❤️❤️❤️</span></div>
                 <div class="stat-box"><span id="powerup-status"></span> Skor: <span id="score">0</span></div>
@@ -188,7 +189,7 @@
         </header>
         
         <div class="canvas-wrapper" id="canvas-wrapper">
-            <canvas id="gameCanvas" width="360" height="440"></canvas>
+            <canvas id="gameCanvas" width="360" height="480"></canvas>
             
             <!-- Layar Mulai Awal -->
             <div id="startScreen" class="overlay show">
@@ -291,7 +292,7 @@
             osc.connect(gain); gain.connect(audioCtx.destination);
             
             const now = audioCtx.currentTime;
-            gain.gain.setValueAtTime(0.015, now); 
+            gain.gain.setValueAtTime(0.015, now); // Volume sedikit diturunkan untuk tema terang
             gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
             osc.start(now); osc.stop(now + 0.2);
             noteIdx = (noteIdx + 1) % bgmNotes.length;
@@ -299,7 +300,7 @@
 
         // ---- STATE GAME ----
         let score = 0, lives = 3, isGameOver = true, frameCount = 0;
-        let baseSpeed = 3.5, fallingItems = [], particles = []; 
+        let baseSpeed = 3.5, fallingItems = [], particles = []; // Kecepatan dasar sedikit dinaikkan
         let powerupTimer = { slow: 0, magnet: 0 };
         
         const player = { x: canvas.width / 2, y: canvas.height - 40, speed: 7, dx: 0, emoji: '🧺' };
@@ -315,7 +316,7 @@
         ];
 
         function createParticles(x, y, isBlue = false) {
-            const color = isBlue ? '#000B63' : '#FFDE00'; 
+            const color = isBlue ? '#000B63' : '#FFDE00'; // Partikel menggunakan warna REITO
             for (let i = 0; i < 12; i++) {
                 particles.push({ x: x, y: y, vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8, life: 1, color: color });
             }
@@ -347,6 +348,7 @@
             let hearts = ""; for(let i=0; i<lives; i++) hearts += "❤️";
             livesEl.innerText = hearts === "" ? "💀" : hearts;
             
+            // Efek kedip disesuaikan untuk tema terang
             wrapper.style.boxShadow = "inset 0 0 40px rgba(255, 0, 0, 0.4)";
             wrapper.style.borderColor = "red";
             setTimeout(() => { 
@@ -400,6 +402,7 @@
                     if (item.type === 'food') {
                         score += item.points; 
                         playSound('pop'); 
+                        // Selang-seling warna partikel kuning dan biru
                         createParticles(item.x, item.y, Math.random() > 0.5);
                     } else if (item.type === 'trap') {
                         score = Math.max(0, score + item.points); playSound('damage');
